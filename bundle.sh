@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# Script: bundle.sh (v0.1.1)
+# Script: bundle.sh
 # Descripción: Consolida código fuente con rutas de entrada/salida configurables.
 # ==============================================================================
 
@@ -116,18 +116,18 @@ bundle_files
 
 # --- Reporte Final ---
 if [ -s "$STATS_TMP" ]; then
-    echo -e "\n📊 --- REPORTE DE MÉTRICAS ---"
-    echo -e "EXTENSIÓN\tARCHIVOS\tLÍNEAS (LoC)"
-    echo -e "---------\t--------\t-----------"
-    awk '{files[$1]++; lines[$1]+=$2} END {for (i in files) printf "%-10s\t%-8d\t%-11d\n", i, files[i], lines[i]}' "$STATS_TMP" | sort -rn -k3
-    echo -e "---------\t--------\t-----------"
-    printf "%-10s\t%-8s\t%-11s\n" "TOTAL" "$(awk 'END {print NR}' "$STATS_TMP")" "$(awk '{s+=$2} END {print s}' "$STATS_TMP")"
+    # Verificar si awk existe antes de usarlo
+    if command -v awk >/dev/null 2>&1; then
+        echo -e "\n📊 --- REPORTE DE MÉTRICAS ---"
+        echo -e "EXTENSIÓN\tARCHIVOS\tLÍNEAS (LoC)"
+        echo -e "---------\t--------\t-----------"
+        awk '{files[$1]++; lines[$1]+=$2} END {for (i in files) printf "%-10s\t%-8d\t%-11d\n", i, files[i], lines[i]}' "$STATS_TMP" | sort -rn -k3
+        echo -e "---------\t--------\t-----------"
+        printf "%-10s\t%-8s\t%-11s\n" "TOTAL" "$(wc -l < "$STATS_TMP")" "$(grep -oE '[0-9]+$' "$STATS_TMP" | paste -sd+ - | bc 2>/dev/null || echo "N/A")"
+    else
+        echo -e "\n⚠️  Estadísticas omitidas: 'awk' no está instalado."
+    fi
     
     rm -f "$STATS_TMP"
-    [ "$ONLY_STATS" = false ] && echo -e "\n✅ Bundle completado. Archivo: $OUTPUT_FILE ($(du -h "$OUTPUT_FILE" | cut -f1))"
-else
-    echo "⚠️  No se encontraron archivos procesables."
-    rm -f "$STATS_TMP"
-    [ -f "$OUTPUT_FILE" ] && [ "$ONLY_STATS" = false ] && rm "$OUTPUT_FILE"
-    exit 1
+    [ "$ONLY_STATS" = false ] && echo -e "\n✅ Bundle completado. Archivo: $OUTPUT_FILE"
 fi
